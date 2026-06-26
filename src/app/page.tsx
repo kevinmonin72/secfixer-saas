@@ -48,6 +48,10 @@ export default function SecFixerPage() {
   const [wpUrl, setWpUrl] = useState("");
   const [wpUser, setWpUser] = useState("");
   const [wpPass, setWpPass] = useState("");
+  const [wfToken, setWfToken] = useState("");
+  const [wfSiteId, setWfSiteId] = useState("");
+  const [shStore, setShStore] = useState("");
+  const [shToken, setShToken] = useState("");
   const [results, setResults] = useState<FixResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -99,7 +103,7 @@ export default function SecFixerPage() {
       const res = await fetch("/api/fix", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ findings: actionable, cms, siteUrl: report.siteUrl, credentials: { token: ghToken, repo: ghRepo, branch: ghBranch, wpUrl, wpUser, wpPass } }),
+        body: JSON.stringify({ findings: actionable, cms, siteUrl: report.siteUrl, credentials: { token: ghToken, repo: ghRepo, branch: ghBranch, wpUrl, wpUser, wpPass, wfToken, wfSiteId, shStore, shToken } }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -245,18 +249,30 @@ export default function SecFixerPage() {
               </>
             )}
 
-            {/* Webflow info */}
+            {/* Webflow credentials */}
             {cms === "webflow" && card(
-              <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-                <span style={{ fontSize: 28 }}>ℹ️</span>
-                <div>
-                  <div style={{ fontWeight: 700, color: "#e2e8f0", marginBottom: 8 }}>Webflow — correction manuelle</div>
-                  <div style={{ color: "#94a3b8", fontSize: ".85em", lineHeight: 1.7 }}>
-                    Webflow ne supporte pas les headers HTTP via API. Les patches sont générés pour être <strong style={{ color: "#f1f5f9" }}>copiés dans Project Settings → Custom Code → Head Code</strong>.<br />
-                    Pour HSTS : router via <strong style={{ color: "#38bdf8" }}>Cloudflare</strong> (SSL/TLS → Edge Certificates → HSTS).
-                  </div>
+              <>
+                <div style={{ fontWeight: 700, color: "#e2e8f0", marginBottom: 6, fontSize: ".95em" }}>Accès Webflow</div>
+                <div style={{ color: "#64748b", fontSize: ".82em", marginBottom: 16 }}>
+                  Token API : <strong style={{ color: "#94a3b8" }}>Account Settings → Integrations → API Access → Generate API token</strong><br />
+                  Site ID : URL du dashboard Webflow → <code style={{ color: "#38bdf8" }}>webflow.com/dashboard/sites/[SITE-ID]</code>
                 </div>
-              </div>
+                <div style={{ display: "grid", gap: 12 }}>
+                  {[
+                    { val: wfToken, set: setWfToken, ph: "Webflow API Token", type: "password" as const, icon: "🔑" },
+                    { val: wfSiteId, set: setWfSiteId, ph: "Site ID (ex: 64a3f2b1c8e9d...)", type: "text" as const, icon: "🌊" },
+                  ].map((field, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(15,23,42,.8)", border: "1px solid #1e293b", borderRadius: 8, padding: "10px 14px" }}>
+                      <span style={{ fontSize: 16 }}>{field.icon}</span>
+                      <input value={field.val} onChange={e => field.set(e.target.value)} placeholder={field.ph} type={field.type}
+                        style={{ flex: 1, background: "none", border: "none", color: "#f1f5f9", fontSize: ".9em", outline: "none" }} />
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: 12, padding: "8px 12px", background: "rgba(56,189,248,.06)", border: "1px solid rgba(56,189,248,.15)", borderRadius: 6, color: "#64748b", fontSize: ".78em" }}>
+                  ℹ️ Le code sera injecté dans Custom Code Head via l'API Webflow. Pour HSTS, activer via Cloudflare.
+                </div>
+              </>
             )}
 
             {/* Wix info */}
@@ -303,6 +319,28 @@ export default function SecFixerPage() {
                     { val: wpUrl, set: setWpUrl, ph: "URL du site (ex: https://lapelle-marseille.com)", type: "text" as const, icon: "🌐" },
                     { val: wpUser, set: setWpUser, ph: "Identifiant WordPress (ex: admin)", type: "text" as const, icon: "👤" },
                     { val: wpPass, set: setWpPass, ph: "Mot de passe d'application (xxxx xxxx xxxx xxxx)", type: "password" as const, icon: "🔑" },
+                  ].map((field, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(15,23,42,.8)", border: "1px solid #1e293b", borderRadius: 8, padding: "10px 14px" }}>
+                      <span style={{ fontSize: 16 }}>{field.icon}</span>
+                      <input value={field.val} onChange={e => field.set(e.target.value)} placeholder={field.ph} type={field.type}
+                        style={{ flex: 1, background: "none", border: "none", color: "#f1f5f9", fontSize: ".9em", outline: "none" }} />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Shopify credentials */}
+            {cms === "shopify" && card(
+              <>
+                <div style={{ fontWeight: 700, color: "#e2e8f0", marginBottom: 6, fontSize: ".95em" }}>Accès Shopify</div>
+                <div style={{ color: "#64748b", fontSize: ".82em", marginBottom: 16 }}>
+                  Admin API token : <strong style={{ color: "#94a3b8" }}>Apps → Develop apps → Create app → Admin API access token</strong> (scope : <code style={{ color: "#38bdf8" }}>write_themes</code>)
+                </div>
+                <div style={{ display: "grid", gap: 12 }}>
+                  {[
+                    { val: shStore, set: setShStore, ph: "Nom du store (ex: mon-store.myshopify.com)", type: "text" as const, icon: "🛍️" },
+                    { val: shToken, set: setShToken, ph: "Admin API Access Token (shpat_...)", type: "password" as const, icon: "🔑" },
                   ].map((field, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(15,23,42,.8)", border: "1px solid #1e293b", borderRadius: 8, padding: "10px 14px" }}>
                       <span style={{ fontSize: 16 }}>{field.icon}</span>
