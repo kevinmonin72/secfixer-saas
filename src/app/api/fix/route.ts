@@ -3,6 +3,7 @@ import { generatePatches, CmsType } from "@/lib/fix-engine";
 import { filterActionable, LocalSecFinding } from "@/lib/localsec-parser";
 import { upsertFile, injectMetaTagsIntoHtml, appendToFile, GithubTarget } from "@/lib/adapters/github";
 import { validateWp, generateWpMuPlugin, WpTarget } from "@/lib/adapters/wordpress";
+import { uploadFileViaftp, FtpTarget } from "@/lib/adapters/ftp";
 import { injectIntoThemeLiquid, validateShopify, ShopifyTarget } from "@/lib/adapters/shopify";
 import { injectCustomCodeWebflow, validateWebflow, WebflowTarget } from "@/lib/adapters/webflow";
 
@@ -112,9 +113,34 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      if (wpName) {
+      // Auto-upload via FTP if credentials provided
+      if (credentials.ftpHost && credentials.ftpUser && credentials.ftpPass) {
+        const ftpTarget: FtpTarget = {
+          host: credentials.ftpHost,
+          user: credentials.ftpUser,
+          password: credentials.ftpPass,
+          port: credentials.ftpPort ? parseInt(credentials.ftpPort) : 21,
+        };
+        try {
+          const remoteDir = credentials.ftpDir || "/public_html/wp-content";
+          const uploadedPath = await uploadFileViaftp(ftpTarget, remoteDir, "secfixer-headers.php", muPluginCode);
+          results.push({
+            patchTitle: "✅ MU-Plugin déposé automatiquement via FTP",
+            status: "applied",
+            url: wpTarget.siteUrl,
+            code: `Chemin : ${uploadedPath}/secfixer-headers.php\nActif immédiatement — aucune action requise.`,
+          });
+        } catch (ftpErr) {
+          results.push({
+            patchTitle: "FTP — Upload automatique",
+            status: "error",
+            error: (ftpErr as Error).message,
+            downloadFile: { name: "secfixer-headers.php", content: muPluginCode },
+          });
+        }
+      } else if (wpName) {
         results.unshift({
-          patchTitle: `✅ Connecté à WordPress (${wpName})`,
+          patchTitle: `✅ Connecté à WordPress (${wpName}) — téléchargez le plugin ci-dessous`,
           status: "applied",
           url: wpTarget.siteUrl,
         });

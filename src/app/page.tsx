@@ -48,6 +48,10 @@ export default function SecFixerPage() {
   const [wpUrl, setWpUrl] = useState("");
   const [wpUser, setWpUser] = useState("");
   const [wpPass, setWpPass] = useState("");
+  const [ftpHost, setFtpHost] = useState("");
+  const [ftpUser, setFtpUser] = useState("");
+  const [ftpPass, setFtpPass] = useState("");
+  const [ftpDir, setFtpDir] = useState("");
   const [wfToken, setWfToken] = useState("");
   const [wfSiteId, setWfSiteId] = useState("");
   const [shStore, setShStore] = useState("");
@@ -103,7 +107,7 @@ export default function SecFixerPage() {
       const res = await fetch("/api/fix", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ findings: actionable, cms, siteUrl: report.siteUrl, credentials: { token: ghToken, repo: ghRepo, branch: ghBranch, wpUrl, wpUser, wpPass, wfToken, wfSiteId, shStore, shToken } }),
+        body: JSON.stringify({ findings: actionable, cms, siteUrl: report.siteUrl, credentials: { token: ghToken, repo: ghRepo, branch: ghBranch, wpUrl, wpUser, wpPass, ftpHost, ftpUser, ftpPass, ftpDir, wfToken, wfSiteId, shStore, shToken } }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -245,6 +249,25 @@ export default function SecFixerPage() {
                       {cms === opt.value && <div style={{ marginLeft: "auto", color: "#3b82f6", fontWeight: 700 }}>✓</div>}
                     </button>
                   ))}
+                </div>
+                <div style={{ marginTop: 16, borderTop: "1px solid #1e293b", paddingTop: 16 }}>
+                  <div style={{ fontWeight: 700, color: "#e2e8f0", marginBottom: 6, fontSize: ".9em" }}>
+                    ⚡ FTP / cPanel — Déploiement 100% automatique
+                  </div>
+                  <div style={{ color: "#64748b", fontSize: ".78em", marginBottom: 12 }}>Si tu fournis les accès FTP, SecFixer dépose le plugin directement — l'entreprise n'a rien à faire.</div>
+                  <div style={{ display: "grid", gap: 10 }}>
+                    {[
+                      { val: ftpHost, set: setFtpHost, ph: "Hôte FTP (ex: ftp.lapelle-marseille.com)", type: "text" as const },
+                      { val: ftpUser, set: setFtpUser, ph: "Identifiant FTP", type: "text" as const },
+                      { val: ftpPass, set: setFtpPass, ph: "Mot de passe FTP", type: "password" as const },
+                      { val: ftpDir, set: setFtpDir, ph: "Répertoire racine (optionnel, ex: /public_html)", type: "text" as const },
+                    ].map((field, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(15,23,42,.8)", border: "1px solid #334155", borderRadius: 8, padding: "10px 14px" }}>
+                        <input value={field.val} onChange={e => field.set(e.target.value)} placeholder={field.ph} type={field.type}
+                          style={{ flex: 1, background: "none", border: "none", color: "#f1f5f9", fontSize: ".9em", outline: "none" }} />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </>
             )}
