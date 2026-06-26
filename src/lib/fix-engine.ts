@@ -1,6 +1,6 @@
 import { LocalSecFinding } from "./localsec-parser";
 
-export type CmsType = "github_pages" | "wordpress" | "shopify" | "generic";
+export type CmsType = "github_pages" | "wordpress" | "shopify" | "generic" | "webflow" | "wix" | "nextjs";
 
 export interface Patch {
   findingId: string;
@@ -93,6 +93,37 @@ export function generatePatches(findings: LocalSecFinding[], cms: CmsType, siteU
         patchContent: wpFunctionsSnippet(wpHeaders),
         description: "Injecte les headers HTTP via add_action('send_headers') dans functions.php du thème actif.",
         canAutoApply: true,
+      });
+    } else if (cms === "nextjs") {
+      patches.push({
+        findingId: headerFindings[0].id,
+        severity: "High",
+        title: `${headerFindings.length} header(s) dans next.config.js`,
+        action: "update_file",
+        filePath: "next.config.js",
+        patchContent: `/** @type {import('next').NextConfig} */\nconst nextConfig = {\n  async headers() {\n    return [\n      {\n        source: '/(.*)',\n        headers: [\n          { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains; preload' },\n          { key: 'X-Content-Type-Options', value: 'nosniff' },\n          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },\n          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },\n          { key: 'Permissions-Policy', value: 'geolocation=(), camera=(), microphone=()' },\n          ${extraHeaders.length ? `{ key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';" },` : ""}\n        ],\n      },\n    ];\n  },\n};\nmodule.exports = nextConfig;`,
+        description: "Ajoute un bloc headers() dans next.config.js — appliqué à toutes les routes.",
+        canAutoApply: true,
+      });
+    } else if (cms === "webflow") {
+      patches.push({
+        findingId: headerFindings[0].id,
+        severity: "High",
+        title: `${headerFindings.length} header(s) — Custom Code Webflow`,
+        action: "manual",
+        content: `<!-- Coller dans Project Settings → Custom Code → Head Code -->\n<meta http-equiv="X-Frame-Options" content="SAMEORIGIN">\n<meta http-equiv="X-Content-Type-Options" content="nosniff">\n<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">\n${extraHeaders.length ? `<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;">` : ""}\n\n<!-- Note: HSTS requiert un plan Webflow Enterprise ou proxy Cloudflare -->\n<!-- Cloudflare → SSL/TLS → Edge Certificates → HSTS : activé -->`,
+        description: "Meta tags dans Project Settings → Custom Code (Head). HSTS via Cloudflare proxy.",
+        canAutoApply: false,
+      });
+    } else if (cms === "wix") {
+      patches.push({
+        findingId: headerFindings[0].id,
+        severity: "High",
+        title: `${headerFindings.length} header(s) — Wix Velo (http-functions)`,
+        action: "manual",
+        content: `// Wix Velo — Coller dans Site → Developer Tools → http-functions.js\n// (ou via Cloudflare proxy pour les vrais headers HTTP)\nimport { ok, serverError } from 'wix-http-functions';\n\nexport function use_middleware(request, context) {\n  // Wix ne supporte pas les headers HTTP custom natifs\n  // Solution recommandée : router via Cloudflare avec ces règles :\n  // Cloudflare → Transform Rules → Response Headers:\n  //   - Strict-Transport-Security: max-age=31536000\n  //   - X-Frame-Options: SAMEORIGIN\n  //   - X-Content-Type-Options: nosniff\n  //   - Referrer-Policy: strict-origin-when-cross-origin\n  return context.next();\n}\n\n// Alternative : SEO → Custom Meta Tags\n// <meta name="referrer" content="strict-origin-when-cross-origin">\n// <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">`,
+        description: "Wix ne supporte pas les headers HTTP natifs — solution via Cloudflare proxy ou meta tags dans SEO → Custom Meta Tags.",
+        canAutoApply: false,
       });
     } else if (cms === "shopify") {
       patches.push({

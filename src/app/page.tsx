@@ -10,8 +10,11 @@ const SEV_BG: Record<string, string> = {
   Critical: "#450a0a", High: "#431407", Medium: "#451a03", Low: "#082f49", Info: "#0f172a",
 };
 const CMS_OPTIONS: { value: CmsType; label: string; icon: string; desc: string }[] = [
-  { value: "github_pages", label: "GitHub Pages", icon: "🐙", desc: "Commit via API" },
   { value: "wordpress", label: "WordPress", icon: "🔵", desc: "WP REST API" },
+  { value: "webflow", label: "Webflow", icon: "🌊", desc: "Custom Code + API" },
+  { value: "wix", label: "Wix", icon: "⬛", desc: "Velo + Cloudflare" },
+  { value: "nextjs", label: "Next.js / React", icon: "⚡", desc: "next.config.js" },
+  { value: "github_pages", label: "GitHub Pages", icon: "🐙", desc: "Commit via API" },
   { value: "shopify", label: "Shopify", icon: "🛍️", desc: "Theme liquid" },
   { value: "generic", label: "Nginx / Apache", icon: "⚙️", desc: "Config serveur" },
 ];
@@ -223,7 +226,7 @@ export default function SecFixerPage() {
             {card(
               <>
                 <div style={{ fontWeight: 700, color: "#e2e8f0", marginBottom: 16, fontSize: ".95em" }}>Type de CMS / hébergement</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10, gridTemplateRows: "auto" }}>
                   {CMS_OPTIONS.map(opt => (
                     <button key={opt.value} onClick={() => handleCmsChange(opt.value)} style={{
                       padding: "14px 18px", borderRadius: 10, border: `2px solid ${cms === opt.value ? "#3b82f6" : "#1e293b"}`,
@@ -237,6 +240,54 @@ export default function SecFixerPage() {
                       </div>
                       {cms === opt.value && <div style={{ marginLeft: "auto", color: "#3b82f6", fontWeight: 700 }}>✓</div>}
                     </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Webflow info */}
+            {cms === "webflow" && card(
+              <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 28 }}>ℹ️</span>
+                <div>
+                  <div style={{ fontWeight: 700, color: "#e2e8f0", marginBottom: 8 }}>Webflow — correction manuelle</div>
+                  <div style={{ color: "#94a3b8", fontSize: ".85em", lineHeight: 1.7 }}>
+                    Webflow ne supporte pas les headers HTTP via API. Les patches sont générés pour être <strong style={{ color: "#f1f5f9" }}>copiés dans Project Settings → Custom Code → Head Code</strong>.<br />
+                    Pour HSTS : router via <strong style={{ color: "#38bdf8" }}>Cloudflare</strong> (SSL/TLS → Edge Certificates → HSTS).
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Wix info */}
+            {cms === "wix" && card(
+              <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 28 }}>ℹ️</span>
+                <div>
+                  <div style={{ fontWeight: 700, color: "#e2e8f0", marginBottom: 8 }}>Wix — correction via Cloudflare</div>
+                  <div style={{ color: "#94a3b8", fontSize: ".85em", lineHeight: 1.7 }}>
+                    Wix ne supporte pas les headers HTTP custom natifs. Les patches générés contiennent le code <strong style={{ color: "#f1f5f9" }}>Cloudflare Transform Rules</strong> à appliquer si ton domaine est proxié, ainsi que les meta tags disponibles dans <strong style={{ color: "#f1f5f9" }}>SEO → Custom Meta Tags</strong>.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Next.js credentials (via GitHub) */}
+            {cms === "nextjs" && card(
+              <>
+                <div style={{ fontWeight: 700, color: "#e2e8f0", marginBottom: 6, fontSize: ".95em" }}>Accès GitHub (repo Next.js)</div>
+                <div style={{ color: "#64748b", fontSize: ".82em", marginBottom: 16 }}>Les patches (next.config.js) seront commités directement dans le repo GitHub du projet.</div>
+                <div style={{ display: "grid", gap: 12 }}>
+                  {[
+                    { val: ghToken, set: setGhToken, ph: "Personal Access Token (repo scope)", type: "password" as const, icon: "🔑" },
+                    { val: ghRepo, set: setGhRepo, ph: "owner/repo (ex: client72/mon-nextjs-site)", type: "text" as const, icon: "📁" },
+                    { val: ghBranch, set: setGhBranch, ph: "Branch (défaut : main)", type: "text" as const, icon: "🌿" },
+                  ].map((field, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(15,23,42,.8)", border: "1px solid #1e293b", borderRadius: 8, padding: "10px 14px" }}>
+                      <span style={{ fontSize: 16 }}>{field.icon}</span>
+                      <input value={field.val} onChange={e => field.set(e.target.value)} placeholder={field.ph} type={field.type}
+                        style={{ flex: 1, background: "none", border: "none", color: "#f1f5f9", fontSize: ".9em", outline: "none" }} />
+                    </div>
                   ))}
                 </div>
               </>
