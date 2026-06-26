@@ -42,6 +42,9 @@ export default function SecFixerPage() {
   const [ghToken, setGhToken] = useState("");
   const [ghRepo, setGhRepo] = useState("");
   const [ghBranch, setGhBranch] = useState("main");
+  const [wpUrl, setWpUrl] = useState("");
+  const [wpUser, setWpUser] = useState("");
+  const [wpPass, setWpPass] = useState("");
   const [results, setResults] = useState<FixResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -93,7 +96,7 @@ export default function SecFixerPage() {
       const res = await fetch("/api/fix", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ findings: actionable, cms, siteUrl: report.siteUrl, credentials: { token: ghToken, repo: ghRepo, branch: ghBranch } }),
+        body: JSON.stringify({ findings: actionable, cms, siteUrl: report.siteUrl, credentials: { token: ghToken, repo: ghRepo, branch: ghBranch, wpUrl, wpUser, wpPass } }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -234,6 +237,27 @@ export default function SecFixerPage() {
                       </div>
                       {cms === opt.value && <div style={{ marginLeft: "auto", color: "#3b82f6", fontWeight: 700 }}>✓</div>}
                     </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* WordPress credentials */}
+            {cms === "wordpress" && card(
+              <>
+                <div style={{ fontWeight: 700, color: "#e2e8f0", marginBottom: 6, fontSize: ".95em" }}>Accès WordPress</div>
+                <div style={{ color: "#64748b", fontSize: ".82em", marginBottom: 16 }}>Utilise un <strong style={{ color: "#94a3b8" }}>Mot de passe d'application</strong> WordPress (pas ton mot de passe admin) — Réglages → Profil → Mots de passe d'application.</div>
+                <div style={{ display: "grid", gap: 12 }}>
+                  {[
+                    { val: wpUrl, set: setWpUrl, ph: "URL du site (ex: https://lapelle-marseille.com)", type: "text" as const, icon: "🌐" },
+                    { val: wpUser, set: setWpUser, ph: "Identifiant WordPress (ex: admin)", type: "text" as const, icon: "👤" },
+                    { val: wpPass, set: setWpPass, ph: "Mot de passe d'application (xxxx xxxx xxxx xxxx)", type: "password" as const, icon: "🔑" },
+                  ].map((field, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(15,23,42,.8)", border: "1px solid #1e293b", borderRadius: 8, padding: "10px 14px" }}>
+                      <span style={{ fontSize: 16 }}>{field.icon}</span>
+                      <input value={field.val} onChange={e => field.set(e.target.value)} placeholder={field.ph} type={field.type}
+                        style={{ flex: 1, background: "none", border: "none", color: "#f1f5f9", fontSize: ".9em", outline: "none" }} />
+                    </div>
                   ))}
                 </div>
               </>
