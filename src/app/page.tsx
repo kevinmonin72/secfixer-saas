@@ -18,7 +18,7 @@ const CMS_OPTIONS: { value: CmsType; label: string; icon: string; desc: string }
   { value: "shopify", label: "Shopify", icon: "🛍️", desc: "Theme liquid" },
   { value: "generic", label: "Nginx / Apache", icon: "⚙️", desc: "Config serveur" },
 ];
-type FixResult = { patchTitle: string; status: "applied"|"manual"|"error"; url?: string; error?: string; code?: string };
+type FixResult = { patchTitle: string; status: "applied"|"manual"|"error"; url?: string; error?: string; code?: string; downloadFile?: { name: string; content: string } };
 
 function Badge({ sev }: { sev: string }) {
   return (
@@ -461,8 +461,22 @@ export default function SecFixerPage() {
                 </div>
                 {r.url && (
                   <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#38bdf8", fontSize: ".85em", textDecoration: "none", background: "rgba(56,189,248,.08)", padding: "6px 12px", borderRadius: 6, border: "1px solid rgba(56,189,248,.2)" }}>
-                    🔗 Voir sur GitHub
+                    🔗 Voir le résultat
                   </a>
+                )}
+                {r.downloadFile && (
+                  <button onClick={() => {
+                    const blob = new Blob([r.downloadFile!.content], { type: "text/plain" });
+                    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+                    a.download = r.downloadFile!.name; a.click();
+                  }} style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#6ee7b7", fontSize: ".85em", background: "rgba(110,231,183,.08)", padding: "6px 12px", borderRadius: 6, border: "1px solid rgba(110,231,183,.2)", cursor: "pointer" }}>
+                    📥 Télécharger {r.downloadFile.name}
+                  </button>
+                )}
+                {r.downloadFile && (
+                  <div style={{ marginTop: 8, padding: "8px 12px", background: "rgba(110,231,183,.04)", border: "1px solid rgba(110,231,183,.1)", borderRadius: 6, color: "#64748b", fontSize: ".78em", lineHeight: 1.6 }}>
+                    <strong style={{ color: "#6ee7b7" }}>Installation en 30 sec :</strong> FTP / cPanel → <code>wp-content/mu-plugins/</code> → déposer le fichier → c'est actif immédiatement, aucun clic requis.
+                  </div>
                 )}
                 {r.error && <div style={{ color: "#f87171", fontSize: ".85em", marginTop: 8, padding: "8px 12px", background: "#450a0a", borderRadius: 6 }}>{r.error}</div>}
                 {r.code && (

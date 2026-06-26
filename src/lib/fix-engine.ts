@@ -91,8 +91,8 @@ export function generatePatches(findings: LocalSecFinding[], cms: CmsType, siteU
         action: "update_file",
         filePath: "wp-content/themes/[votre-theme]/functions.php",
         patchContent: wpFunctionsSnippet(wpHeaders),
-        description: "Injecte les headers HTTP via add_action('send_headers') dans functions.php du thème actif.",
-        canAutoApply: true,
+        description: "Coller dans Apparence → Éditeur de thème → functions.php (WP REST API ne peut pas écrire des fichiers système).",
+        canAutoApply: false,
       });
     } else if (cms === "nextjs") {
       patches.push({
@@ -132,8 +132,8 @@ export function generatePatches(findings: LocalSecFinding[], cms: CmsType, siteU
         title: "Meta tags dans theme.liquid",
         action: "update_theme",
         filePath: "layout/theme.liquid",
-        patchContent: `  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">\n  <meta http-equiv="Content-Security-Policy" content="${cspValue(cspFindings[0] || headerFindings[0])}">`,
-        description: "Ajoute les meta tags de sécurité dans le <head> de layout/theme.liquid.",
+        patchContent: `  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">\n  <meta http-equiv="X-Content-Type-Options" content="nosniff">\n  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">\n  <meta http-equiv="Content-Security-Policy" content="${cspValue(cspFindings[0] || headerFindings[0])}">`,
+        description: "Injecte les meta tags dans le <head> de layout/theme.liquid via l'API Shopify Admin.",
         canAutoApply: true,
       });
     } else {
@@ -158,8 +158,8 @@ export function generatePatches(findings: LocalSecFinding[], cms: CmsType, siteU
       action: "update_file",
       filePath: "wp-config.php",
       patchContent: `// SecFixer — Cookie Security\n@ini_set('session.cookie_secure', true);\n@ini_set('session.cookie_httponly', true);\n@ini_set('session.cookie_samesite', 'Lax');\ndefine('COOKIE_DOMAIN', parse_url('${siteUrl}', PHP_URL_HOST) ?: '');`,
-      description: "Force les flags Secure + HttpOnly + SameSite=Lax sur les cookies de session WordPress.",
-      canAutoApply: true,
+      description: "Coller dans wp-config.php via FTP ou le gestionnaire de fichiers de l'hébergeur (avant la ligne 'That's all, stop editing!').",
+      canAutoApply: false,
     });
   }
 
